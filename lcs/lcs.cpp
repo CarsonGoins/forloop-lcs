@@ -24,9 +24,7 @@ extern "C" {
 #endif
 
 int main (int argc, char* argv[]) {
-
-
-  //forces openmp to create the threads beforehand
+  
 #pragma omp parallel
   {
     int fd = open (argv[0], O_RDONLY);
@@ -34,7 +32,7 @@ int main (int argc, char* argv[]) {
       close (fd);
     }
     else {
-      std::cerr<<"something is amiss"<<std::endl;
+      std::cerr<<"nope"<<std::endl;
     }
   }
 
@@ -47,15 +45,12 @@ int main (int argc, char* argv[]) {
   int nbthreads = atoi(argv[3]);
   omp_set_num_threads(nbthreads);
   int maxim = max(n,m);
-  // get string data
   char *X = new char[maxim];
   char *Y = new char[maxim];
 
   generateLCS(X, m, Y, n);
   int result=0;
-
   int C[maxim+1][maxim+1];
-
 
 #pragma omp parallel
 {
@@ -70,7 +65,6 @@ C[i][0]=0;
 }
 }
 
-//start the time
 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 
 #pragma omp parallel
@@ -79,14 +73,11 @@ std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_c
 {
 for(int k=1; k<=maxim;k++)
 {
-
-
-	int granularity = 500;
+	int g = 500;
 	if(n<=10)
-		granularity = 50;
+		g = 50;
 	else 
-		granularity = 5*n*0.01;
-
+		g = 5*n*0.01;
 
     if (X[k-1] == Y[k-1]){
             C[k][k] = C[k-1][k-1] + 1;
@@ -95,7 +86,7 @@ for(int k=1; k<=maxim;k++)
     }
     #pragma omp task shared(X , Y, C, k, maxim)
 {
-    #pragma omp parallel for schedule(guided,granularity)
+    #pragma omp parallel for schedule(guided,g)
     for(int j = k; j<=maxim;j++)
     {
         if (X[k-1] == Y[j]){
@@ -107,7 +98,7 @@ for(int k=1; k<=maxim;k++)
 }
    #pragma omp task shared(X, Y, C, k, maxim) 
 { 
-    #pragma omp parallel for schedule(guided,granularity)
+    #pragma omp parallel for schedule(guided,g)
     for(int i = k;i<=maxim;i++)
     {
         if (X[i] == Y[k-1]){
@@ -120,20 +111,13 @@ for(int k=1; k<=maxim;k++)
     #pragma omp taskwait
 
 }
-
 result = C[m][n];
 }
 }
 
-
-
-        // end the time
-	std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elpased_seconds = end-start;
-
-	// display time to err stream
-	std::cerr<<elpased_seconds.count()<<std::endl;
-
+std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+std::chrono::duration<double> elpased_seconds = end-start;
+std::cerr<<elpased_seconds.count()<<std::endl;
 checkLCS(X, m, Y, n, result);
-  return 0;
+return 0;
 }
