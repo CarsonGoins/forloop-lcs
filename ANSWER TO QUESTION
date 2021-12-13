@@ -1,0 +1,1 @@
+The speedup is roughly 1 for 1 with threads. Once 16 threads are introduced we see a speedup of 16
